@@ -15,21 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\minimal_HH_neuron_example.cpp">
+    <ClCompile Include="minimal_HH_neuron_example.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\particle_method.cpp">
+    <ClCompile Include="particle_method.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\set_hh_eqn.h">
+    <ClInclude Include="particle_method.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\particle_method.h">
+    <ClInclude Include="runge_kutta_bogacki_shampine32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\runge_kutta_bogacki_shampine32.h">
+    <ClInclude Include="set_hh_eqn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

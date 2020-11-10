@@ -18,6 +18,15 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="minimal_HH_neuron_example.cpp" />
+    <ClCompile Include="particle_method.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="particle_method.h" />
+    <ClInclude Include="runge_kutta_bogacki_shampine32.h" />
+    <ClInclude Include="set_hh_eqn.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{76BAA934-C985-4065-B925-63963F411DB7}</ProjectGuid>
@@ -126,15 +135,6 @@
       <AdditionalDependencies>libeng.lib;libmx.lib;libmat.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\minimal_HH_neuron_example.cpp" />
-    <ClCompile Include="..\particle_method.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\particle_method.h" />
-    <ClInclude Include="..\runge_kutta_bogacki_shampine32.h" />
-    <ClInclude Include="..\set_hh_eqn.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
