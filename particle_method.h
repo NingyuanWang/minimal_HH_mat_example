@@ -68,7 +68,7 @@ typedef std::function<value_type(const State_variable)> vector_scalar_function;
 typedef std::function<bool(const State_variable)> vector_bool_function;
 typedef std::function<void(State_variable)> vector_void_function;
 struct Center_level_set;
-class Particle {
+struct Particle {
 public:
 	State_variable center_location;
 	Matrix_type covariance_matrix;
