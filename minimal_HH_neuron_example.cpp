@@ -6,15 +6,14 @@
 bool g_display_density = true;
 void run_HH_model(const double diffusion_coeff, const double coupling_strength, const double coupling_potential, const std::string ICfilename, const double time_stepsize, const int stepsize_count, const double tau, const double lambda, const double alpha, const double linear_tolerance, const int plot_interval, std::vector<bool> projection_dimension, std::vector<bool> density_projection_dimension, const bool generate_video) {
 //Setting models:
-	Population_density* a_ptr = NULL;
+	Population_density_with_equation* a_ptr = NULL;
 	int plot_stepcount;
 	if (g_display_density) {
 		plot_stepcount = stepsize_count / plot_interval;
 	}
 	Advection_diffusion_eqn* HH = set_Hodgkin_Huxley_eqn(diffusion_coeff, coupling_strength, coupling_potential);
 	double plot_xlb, plot_xub, plot_ylb, plot_yub;
-	a_ptr = new Population_density(4, tau,lambda,alpha);
-	a_ptr->set_ODE(*HH);
+	a_ptr = new Population_density_with_equation(*HH,4, tau,lambda,alpha);
 	a_ptr->input_all_particles(ICfilename.c_str());
 	if (g_display_density)
 	{
@@ -61,7 +60,7 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 //Loops for distribution update: 
 	for (size_t i = 0; i < stepsize_count + 1; i++)
 	{
-		a_ptr->update_ODE_adaptive_split(*HH, time_stepsize, 1, linear_tolerance);
+		a_ptr->update_ODE_adaptive_split(time_stepsize, 1, linear_tolerance);
 		t += time_stepsize;
 		std::cout << "time t = " << t << std::endl;
 		std::cout << "coupling: " << a_ptr->coupling_at_previous_timestep() << std::endl;

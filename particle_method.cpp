@@ -156,7 +156,7 @@ std::vector<value_type> Population_density::density_projection_at_coordinate(con
 Center_level_set abs(const Center_level_set& p1) {
 	return Center_level_set(p1.center.cwiseAbs(), p1.spanning_vertices.cwiseAbs());
 }
-void Population_density::set_ODE(const Advection_diffusion_eqn& adv_diff_eqn) {
+void Population_density_with_equation::set_ODE(const Advection_diffusion_eqn& adv_diff_eqn) {
 	const vector_vector_function advection_velocity_copy = adv_diff_eqn.advection_velocity;
 	const auto coupling_velocity_copy = adv_diff_eqn.coupling_velocity;
 	const Matrix_type diffusion_coeff = adv_diff_eqn.diffusion_coefficient;
@@ -297,7 +297,7 @@ void restrict_to_domain(const Advection_diffusion_eqn& adv_diff_eqn, Center_leve
 		}
 	}
 }
-void Population_density::update_ODE_adaptive(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount) {
+void Population_density_with_equation::update_ODE_adaptive(const value_type timestep, const index_type stepcount) {
 	if (dimension != adv_diff_eqn.dimension) {
 		std::cout << "Dimension do not match" << std::endl;
 		return;
@@ -359,7 +359,7 @@ void Population_density::update_ODE_adaptive(const Advection_diffusion_eqn& adv_
 		//std::cout << "coupling strength sum: " << coupling_strength_sum << std::endl;
 	}
 }
-void Population_density::update_ODE_const(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount) {
+void Population_density_with_equation::update_ODE_const(const value_type timestep, const index_type stepcount) {
 	if (dimension != adv_diff_eqn.dimension) {
 		std::cout << "Dimension do not match" << std::endl;
 		return;
@@ -403,7 +403,7 @@ void Population_density::update_ODE_const(const Advection_diffusion_eqn& adv_dif
 #ifdef DEBUG_DEADLOCK
 std::vector<double> g_time_vect;
 #endif // DEBUG_DEADLOCK
-void Population_density::update_ODE_adaptive_split(const Advection_diffusion_eqn& adv_diff_eqn, const value_type coupling_timestep, const index_type stepcount, const value_type rel_error_bound) {
+void Population_density_with_equation::update_ODE_adaptive_split(const value_type coupling_timestep, const index_type stepcount, const value_type rel_error_bound) {
 	this->rel_error_bound = rel_error_bound;
 	for (size_t n = 0; n < stepcount; n++)
 	{
@@ -498,7 +498,7 @@ std::tuple<bool, double, State_variable> Population_density::update_particle_at_
 }
 #endif // DEBUG_DEADLOCK
 
-std::tuple<bool, double,State_variable> Population_density::update_particle_at_index_single_step(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr) {
+std::tuple<bool, double,State_variable> Population_density_with_equation::update_particle_at_index_single_step(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr) {
 	//Check approx validity at initial time step:
 	const auto lin_approx_rel_error_prev_state = particle_linear_approx_rel_error(*itr, adv_diff_eqn);
 	namespace odeint = boost::numeric::odeint;
@@ -592,14 +592,8 @@ std::tuple<bool, double,State_variable> Population_density::update_particle_at_i
 		return std::make_tuple(false, maximum_timestep - time_before_split, lin_approx_rel_error.second);
 	}
 }
-void update_ODE_const(Population_density& population_density, const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount) {
-	population_density.update_ODE_const(adv_diff_eqn, timestep, stepcount);
-}
-void update_ODE_adaptive(Population_density& population_density, const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount) {
-	population_density.update_ODE_adaptive(adv_diff_eqn, timestep, stepcount);
-}
 std::array<Particle, 3> split_particle_in_direction(const Particle x, const State_variable offset);
-value_type Population_density::update_particle_at_index(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const value_type coupling_timestep, particle_vector::iterator itr) {
+value_type Population_density_with_equation::update_particle_at_index(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const value_type coupling_timestep, particle_vector::iterator itr) {
 	const Particle prev_state = *itr;
 #ifdef DEBUG_DEADLOCK
 	std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
@@ -708,7 +702,7 @@ double linear_approx_rel_error(const Particle& x, const State_variable& offset, 
 	const double rel_error = (near_center_deriv - far_center_deriv).norm() / center_derivative.norm();
 	return rel_error;
 }
-void Population_density::check_linear_approx(const int particle_index, const Advection_diffusion_eqn adv_diff_eqn) const {
+void Population_density_with_equation::check_linear_approx(const int particle_index) const {
 	const Particle& target_particle = p_vect[particle_index];
 	auto svd_structure = target_particle.covariance_matrix.jacobiSvd(Eigen::ComputeFullU);
 	const Matrix_type covariance_sqrt = svd_structure.matrixU();
@@ -824,7 +818,7 @@ std::vector<index_type> Population_density::sort_index_in_nth_coordinate(const i
 	}
 	return rval;
 }
-void Population_density::combine_particles() {
+void Population_density_with_equation::combine_particles() {
 #ifdef DISPLAY_COMBINE
 	std::cout << "Size before: " << p_vect.size() << std::endl;  
 #endif // DISPLAY_COMBINE
@@ -921,7 +915,7 @@ void Population_density::combine_particles() {
 
 	return;
 }
-Particle Population_density::combine_particle_at_indices(const std::vector<index_type> &indices) const{//Returns the index of remaining 
+Particle Population_density_with_equation::combine_particle_at_indices(const std::vector<index_type> &indices) const{//Returns the index of remaining 
 	if (indices.size() == 1) {
 		return p_vect[indices[0]];
 	}
@@ -943,7 +937,7 @@ Particle Population_density::combine_particle_at_indices(const std::vector<index
 	}
 	return combined_particle;
 }
-void Population_density::split_particles(const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound) {
+void Population_density_with_equation::split_particles(const value_type rel_error_bound) {
 	const int prev_size = size();
 	tbb::parallel_for(tbb::blocked_range<int>(0,p_vect.size()),[&](tbb::blocked_range<int>& index_range)
 	{

@@ -68,6 +68,9 @@ typedef std::function<value_type(const State_variable)> vector_scalar_function;
 typedef std::function<bool(const State_variable)> vector_bool_function;
 typedef std::function<void(State_variable)> vector_void_function;
 struct Center_level_set;
+struct Advection_diffusion_eqn;
+class Population_density;
+class Population_density_with_equation;
 struct Particle {
 public:
 	State_variable center_location;
@@ -81,9 +84,14 @@ public:
 	Particle(const value_type weight, const State_variable& center_location, const Matrix_type& covariance_matrix) : weight(weight),center_location(center_location),covariance_matrix(covariance_matrix) {}
 	value_type density_at(const State_variable& location) const;
 	value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
+    friend struct Center_level_set;
+    friend struct Advection_diffusion_eqn;
+    friend class Population_density;
+    friend class Population_density_with_equation;
+private:
 	Center_level_set to_center_level_set() const;
 };
-struct Advection_diffusion_eqn;
+
 struct Center_level_set :// "State variable" used in update_ODE to compute advection diffusion equation
 	boost::additive1<Center_level_set,
 	boost::additive2<Center_level_set, value_type,
@@ -165,19 +173,15 @@ class Population_density {
 public:
 	const index_type dimension;
 	const value_type tau;
-	//tau NOW only affect particle combination. 
-	//tau is chosen such that the covariance_matrix matrix is close to identity. The 
-	//real inverse to the covariance is (1/tau)*covariance_matrix 
+	//tau NOW only affect particle combination. Larger tau leads to less aggressive particle combination.
     const value_type lambda;//regulariztion factor
     const value_type alpha;//advection velocity relative distance. alpha small uses level set closer to center.
-	//private:
-	particle_vector p_vect;
+	//private: Note p_vect is not private only due to limit of tbb::concurrent_vector
+	particle_vector p_vect;//container for the particles
 public:
 	//constructor: 
 	Population_density(const index_type state_space_dimension, const value_type tau = 0.01 / 4.0 / log(2.0), const value_type lambda = 1e-6, const value_type alpha = 0.2)
-		: dimension(state_space_dimension), tau(tau), lambda(lambda),alpha(alpha) {
-
-	}
+		: dimension(state_space_dimension), tau(tau), lambda(lambda),alpha(alpha) {}
 	typedef particle_vector::iterator iterator;
 	typedef particle_vector::const_iterator const_iterator;
 	//container interface: 
@@ -216,21 +220,10 @@ public:
 		//p_vect.insert(end(), particle);
 		return end();
 	}
-	double coupling_at_previous_timestep() const {
-		return coupling_strength_sum;
-	}
-	value_type density_at(const State_variable& location) const;
+	value_type density_at(const State_variable& location) const;//returns population density at location
 	value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
-	std::vector<value_type> density_at(const std::vector<State_variable>& location) const;
+	std::vector<value_type> density_at(const std::vector<State_variable>& location) const;//returns population density at all points in the location vector
 	std::vector<value_type> density_projection_at_coordinate(const std::vector<State_variable>& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
-	void split_particles(const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);//Split all particles that are too large.
-	void combine_particles();
-	void update_ODE_const(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount = 1);
-	void sort_by_weight();
-	void update_ODE_adaptive(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount = 1);
-	void update_ODE_adaptive_split(const Advection_diffusion_eqn& adv_diff_eqn, const value_type coupling_timestep, const index_type stepcount, const value_type rel_error_bound);
-	void set_ODE(const Advection_diffusion_eqn& adv_diff_eqn);
-	void check_linear_approx(const int particle_index, const Advection_diffusion_eqn adv_diff_eqn) const;
 	double average_in_index(const int coord_idx) const;
 #ifdef MATLAB_VISUALIZE
 	Plot_handle plot_density(std::vector<bool> projection_dimensions, const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
@@ -251,32 +244,51 @@ public:
 	// w_array: 1*particle_count
 	// sigma_array: dimension*dimension*particle_count 3_D array
 protected:
-	double rel_error_bound = DEFAULT_SPLIT_REL_ERROR;
-	typedef std::function<void(const Center_level_set&, Center_level_set&, const value_type)> adv_diff_eqn_odeint_reformulation;
-	adv_diff_eqn_odeint_reformulation adv_diff_eqn_on_levelset;
-	adv_diff_eqn_odeint_reformulation adv_diff_eqn_on_levelset_coarse_diffusion;
-	vector_vector_function advection_dynamics;
-	//std::vector<Center_level_set> center_level_set_vect;
-	value_type coupling_strength_sum = 0.0;
-	std::vector<double> get_location_in_dimension_n(const index_type n) const;
-	std::vector<double> get_weight() const;
-	std::vector<index_type> sort_index_in_nth_coordinate(const index_type coordinate) const;
-	void sort_in_nth_coordinate(const index_type coordinate);
-	Particle combine_particle_at_indices(const std::vector<index_type> &indices) const;
-	//functions used in update_ODE_adaptive_split: using iterator as input since it is the rval of tbb vector push_back
-	value_type update_particle_at_index(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const value_type coupling_timestep , particle_vector::iterator itr);//returns coupling strength over timestep.
-	std::tuple<bool, double, State_variable> update_particle_at_index_single_step(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr);
-	//retruns true, 0.0, empty vector if updated to end of timestep. Else, return false, remaining time to update, and axis of Gaussian to split. 
-#ifdef DEBUG_DEADLOCK
-	std::tuple<bool, double, State_variable> update_particle_at_index_single_step_wrapped(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr);
-#endif //DEBUG_DEADLOCK
+    std::vector<double> get_location_in_dimension_n(const index_type n) const;
+    std::vector<double> get_weight() const;
+    std::vector<index_type> sort_index_in_nth_coordinate(const index_type coordinate) const;
+    void sort_in_nth_coordinate(const index_type coordinate);
+    void sort_by_weight();
 };
-
+class Population_density_with_equation : public Population_density {
+public:
+    const Advection_diffusion_eqn adv_diff_eqn;
+    double coupling_at_previous_timestep() const {
+        return coupling_strength_sum;
+    }
+private:
+    void set_ODE(const Advection_diffusion_eqn& adv_diff_eqn);
+    value_type coupling_strength_sum = 0.0;
+    double rel_error_bound = DEFAULT_SPLIT_REL_ERROR;
+    typedef std::function<void(const Center_level_set&, Center_level_set&, const value_type)> adv_diff_eqn_odeint_reformulation;
+    adv_diff_eqn_odeint_reformulation adv_diff_eqn_on_levelset;
+    adv_diff_eqn_odeint_reformulation adv_diff_eqn_on_levelset_coarse_diffusion;
+    vector_vector_function advection_dynamics;
+    //std::vector<Center_level_set> center_level_set_vect;
+    Particle combine_particle_at_indices(const std::vector<index_type>& indices) const;
+    //functions used in update_ODE_adaptive_split: using iterator as input since it is the rval of tbb vector push_back
+    value_type update_particle_at_index(const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const value_type coupling_timestep, particle_vector::iterator itr);//returns coupling strength over timestep.
+    std::tuple<bool, double, State_variable> update_particle_at_index_single_step(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr);
+    //retruns true, 0.0, empty vector if updated to end of timestep. Else, return false, remaining time to update, and axis of Gaussian to split. 
+#ifdef DEBUG_DEADLOCK
+    std::tuple<bool, double, State_variable> update_particle_at_index_single_step_wrapped(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr);
+#endif //DEBUG_DEADLOCK
+public:
+    //constructor: 
+    Population_density_with_equation(const Advection_diffusion_eqn& adv_diff_eqn, const index_type state_space_dimension, const value_type tau = 0.01 / 4.0 / log(2.0), const value_type lambda = 1e-6, const value_type alpha = 0.2)
+        : Population_density(state_space_dimension,tau,lambda,alpha),adv_diff_eqn(adv_diff_eqn){
+        set_ODE(adv_diff_eqn);
+    }
+    void update_ODE_const(const value_type timestep, const index_type stepcount = 1);
+    void update_ODE_adaptive(const value_type timestep, const index_type stepcount = 1);
+    void update_ODE_adaptive_split(const value_type coupling_timestep, const index_type stepcount, const value_type rel_error_bound);
+    void check_linear_approx(const int particle_index) const;
+    void split_particles(const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);//Split all particles that are too large.
+    void combine_particles();
+};
 
 void approximate_jacobian(Matrix_type& jacobian, const vector_vector_function& full_derivative, const State_variable& x);//Assumes output is already initialized.
 Matrix_type approximate_jacobian(const vector_vector_function& full_derivative, const State_variable& x);
-void update_ODE_const(Population_density& population_density, const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount = 1);
-void update_ODE_adaptive(Population_density& population_density, const Advection_diffusion_eqn& adv_diff_eqn, const value_type timestep, const index_type stepcount = 1);
 std::vector<Particle> split_particle(const Particle x, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);
 std::vector<Particle> split_particle_old(const Particle x, const value_type tau);//A legacy version to keep compatibility with stuff not actively in use.
 bool need_split_in_direction(const Particle& x, const State_variable& offset, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);
