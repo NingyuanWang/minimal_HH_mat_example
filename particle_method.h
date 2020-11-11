@@ -172,16 +172,12 @@ typedef tbb::concurrent_vector<Particle> particle_vector;
 class Population_density {
 public:
 	const index_type dimension;
-	const value_type tau;
-	//tau NOW only affect particle combination. Larger tau leads to less aggressive particle combination.
-    const value_type lambda;//regulariztion factor
-    const value_type alpha;//advection velocity relative distance. alpha small uses level set closer to center.
 	//private: Note p_vect is not private only due to limit of tbb::concurrent_vector
 	particle_vector p_vect;//container for the particles
 public:
 	//constructor: 
-	Population_density(const index_type state_space_dimension, const value_type tau = 0.01 / 4.0 / log(2.0), const value_type lambda = 1e-6, const value_type alpha = 0.2)
-		: dimension(state_space_dimension), tau(tau), lambda(lambda),alpha(alpha) {}
+	Population_density(const index_type state_space_dimension)
+		: dimension(state_space_dimension) {}
 	typedef particle_vector::iterator iterator;
 	typedef particle_vector::const_iterator const_iterator;
 	//container interface: 
@@ -224,9 +220,14 @@ public:
 	value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
 	std::vector<value_type> density_at(const std::vector<State_variable>& location) const;//returns population density at all points in the location vector
 	std::vector<value_type> density_projection_at_coordinate(const std::vector<State_variable>& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
-	double average_in_index(const int coord_idx) const;
+	double average_in_index(const int coord_idx) const;//returns the average value for coordinate i. (e.g. in HH model, average_in_index(0) returns average membrane potential.
 #ifdef MATLAB_VISUALIZE
 	Plot_handle plot_density(std::vector<bool> projection_dimensions, const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
+    //Plot the marginal population density projected into the projection_dimensions. 
+    //e.g.: in a 4-dimensional space, projection_dimensions=TFTF projects the marginal density into 1st and 3rd dimension. 
+    //The projection can be into a 1-dimensional or 2-dimensional subspace 
+    //x_lb, x_ub, y_lb, y_ub is the lower and bounds for the coordinates to project to. y_lb, y_ub is not used when projection is into a 1-dimensional subspace
+    //imagesc_options passes additional parameters into the imagesc command of matlab.
 	Plot_handle plot_density(const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
 	//project into first 2 dimensions. 
 	Plot_handle plot_density(const int projection_dimension, const value_type x_lb, const value_type x_ub, const char *imagesc_options) const;//project into 1 dimension
@@ -256,6 +257,10 @@ public:
     double coupling_at_previous_timestep() const {
         return coupling_strength_sum;
     }
+    const value_type tau;
+    //tau NOW only affect particle combination. Larger tau leads to less aggressive particle combination.
+    const value_type lambda;//regulariztion factor
+    const value_type alpha;//advection velocity relative distance. alpha small uses level set closer to center.
 private:
     void set_ODE(const Advection_diffusion_eqn& adv_diff_eqn);
     value_type coupling_strength_sum = 0.0;
@@ -276,7 +281,7 @@ private:
 public:
     //constructor: 
     Population_density_with_equation(const Advection_diffusion_eqn& adv_diff_eqn, const index_type state_space_dimension, const value_type tau = 0.01 / 4.0 / log(2.0), const value_type lambda = 1e-6, const value_type alpha = 0.2)
-        : Population_density(state_space_dimension,tau,lambda,alpha),adv_diff_eqn(adv_diff_eqn){
+        : Population_density(state_space_dimension),adv_diff_eqn(adv_diff_eqn), tau(tau), lambda(lambda), alpha(alpha) {
         set_ODE(adv_diff_eqn);
     }
     void update_ODE_const(const value_type timestep, const index_type stepcount = 1);

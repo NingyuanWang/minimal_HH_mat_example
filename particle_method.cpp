@@ -472,7 +472,7 @@ std::pair<double, State_variable> particle_linear_approx_rel_error(const Particl
 	return max_rel_error;
 }
 #ifdef DEBUG_DEADLOCK
-std::tuple<bool, double, State_variable> Population_density::update_particle_at_index_single_step_wrapped(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr) {
+std::tuple<bool, double, State_variable> Population_density_with_equation::update_particle_at_index_single_step_wrapped(const Advection_diffusion_eqn& adv_diff_eqn, const value_type maximum_timestep, particle_vector::iterator itr) {
 	return update_particle_at_index_single_step(adv_diff_eqn, maximum_timestep, itr);
 	std::mutex m;
 	std::condition_variable cv;
