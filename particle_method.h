@@ -284,12 +284,12 @@ public:
         : Population_density(state_space_dimension),adv_diff_eqn(adv_diff_eqn), tau(tau), lambda(lambda), alpha(alpha) {
         set_ODE(adv_diff_eqn);
     }
-    void update_ODE_const(const value_type timestep, const index_type stepcount = 1);
-    void update_ODE_adaptive(const value_type timestep, const index_type stepcount = 1);
-    void update_ODE_adaptive_split(const value_type coupling_timestep, const index_type stepcount, const value_type rel_error_bound);
-    void check_linear_approx(const int particle_index) const;
-    void split_particles(const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);//Split all particles that are too large.
-    void combine_particles();
+    void update_ODE_const(const value_type timestep, const index_type stepcount = 1);//Updates population density with fixed timestep
+    void update_ODE_adaptive(const value_type timestep, const index_type stepcount = 1);//Update population density with variable timestep that is at most timestep
+    void update_ODE_adaptive_split(const value_type coupling_timestep, const index_type stepcount, const value_type rel_error_bound);//Update population density with variable timestep that is at most timestep. Moreover, if particles are too large to be accurate, particles are splitted automatically
+    void check_linear_approx(const int particle_index) const;//prints information about accuracy of local linear approximation
+    void split_particles(const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);//Split all particles that are too large. No need to call if using update_ODE_adaptive_split
+    void combine_particles();//combine particles. Should be called between each update_ODE step
 };
 
 void approximate_jacobian(Matrix_type& jacobian, const vector_vector_function& full_derivative, const State_variable& x);//Assumes output is already initialized.
