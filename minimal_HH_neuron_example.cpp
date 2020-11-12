@@ -4,6 +4,7 @@
 #include <boost/program_options.hpp>
 #define MATLAB_VISUALIZE
 bool g_display_density = true;
+bool g_silence = false;
 void run_HH_model(const double diffusion_coeff, const double coupling_strength, const double coupling_potential, const std::string ICfilename, const double time_stepsize, const int stepsize_count, const double tau, const double lambda, const double alpha, const double linear_tolerance, const int plot_interval, std::vector<bool> projection_dimension, std::vector<bool> density_projection_dimension, const bool generate_video) {
 //Setting models:
 	Population_density_with_equation* a_ptr = NULL;
@@ -29,7 +30,10 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 	{
 		matlabarg = "title('average voltage : " + std::to_string(average_V * 100) + "mV')";
 		passplotcommand(global_matlab_engine, matlabarg.c_str());
-		std::cout << "Problem setup finished.\n";
+        if (!g_silence)
+        {
+            std::cout << "Problem setup finished.\n";
+        }
 	}
 //Setting timings:
 	std::chrono::high_resolution_clock::time_point t0 = std::chrono::high_resolution_clock::now();
@@ -62,9 +66,12 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 	{
 		a_ptr->update_ODE_adaptive_split(time_stepsize, 1, linear_tolerance);
 		t += time_stepsize;
-		std::cout << "time t = " << t << std::endl;
-		std::cout << "coupling: " << a_ptr->coupling_at_previous_timestep() << std::endl;
-		std::cout << "Particle count (before combine): " << a_ptr->size() << std::endl;
+        if (!g_silence) {
+            std::cout << "time t = " << t << std::endl;
+            std::cout << "coupling: " << a_ptr->coupling_at_previous_timestep() << std::endl;
+            std::cout << "Particle count (before combine): " << a_ptr->size() << std::endl;
+        }
+
 		//Copy data to mat files: 
 		const double coupling_strength = a_ptr->coupling_at_previous_timestep();
 		const double particle_count = double(a_ptr->size());//convert to double
@@ -111,9 +118,11 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 			}
 		}
 		a_ptr->combine_particles();
-		std::cout << "Particle count (after combine): " << a_ptr->size() << std::endl;
-		std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-		std::cout << "Computation time: " << seconds(t1 - t0).count() << " seconds." << std::endl;
+        if (!g_silence) {
+            std::cout << "Particle count (after combine): " << a_ptr->size() << std::endl;
+            std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+            std::cout << "Computation time: " << seconds(t1 - t0).count() << " seconds." << std::endl;
+        }
 
 	}
 	if (g_display_density && generate_video) {
@@ -123,7 +132,12 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 	}
 
 	a_ptr->output_all_particles("HHTestatend.mat");
-	std::cout << "Breakpoint\n";
+    std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
+    const double seconds_elapsed = seconds(t1 - t0).count();
+    if (!g_silence)
+    {
+        std::cout << "Total Computation time: " << seconds_elapsed << " seconds." << std::endl;
+    }
 	matPutVariable(output_matptr, "avg_potential", avg_potential_matlabarray);
 	matPutVariable(output_matptr, "coupling", coupling_strength_matlabarray);
 	matPutVariable(output_matptr, "t", t_matlabarray);
@@ -132,6 +146,11 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 	mxDestroyArray(coupling_strength_matlabarray);
 	mxDestroyArray(t_matlabarray);
 	mxDestroyArray(particle_count_matlabarray);
+    mxArray* t_computation_matlabarray;
+    t_computation_matlabarray = mxCreateDoubleMatrix(1, 1, mxREAL);
+    memcpy(static_cast<double*>(mxGetPr(t_computation_matlabarray)), &seconds_elapsed, sizeof(double));
+    matPutVariable(output_matptr, "t_computation", t_computation_matlabarray);
+    mxDestroyArray(t_computation_matlabarray);
 }
 int main(int argc, char **argv) {
 	double diffusion_coeff;
@@ -160,6 +179,7 @@ int main(int argc, char **argv) {
 		("stepsize,s", boost::program_options::value<double>(&time_stepsize)->default_value(0.05), "ms - maximum_stepsize")
 		("stepcount,N", boost::program_options::value<int>(&stepsize_count)->default_value(1000), "number of timesteps")
 		("plot_interval,i", boost::program_options::value<int>(&plot_interval)->default_value(0), "timesteps between each plot (0 if no plot)")
+        ("silence",boost::program_options::bool_switch(&g_silence)->default_value(false),"silent output to std::cout during computation")
 		("projection_dimensions,p", boost::program_options::value<std::string>(&projection_dimension_str)->default_value("0,1,2"), "index of dimensions to project to, can have 1, 2 or 3 entries, separated by ,")
         ("density_projection_dimensions,q", boost::program_options::value<std::string>(&density_projection_dimension_str)->default_value("0,1"), "index of dimensions to project in density map, 1 or 2 entries, separated by ,")
 		("video,v", boost::program_options::bool_switch(&generate_video)->default_value(true), "generates video of all plots")
