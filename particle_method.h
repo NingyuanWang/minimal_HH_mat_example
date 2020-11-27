@@ -91,7 +91,7 @@ public:
 private:
 	Center_level_set to_center_level_set() const;
 };
-
+//Center_level_set is only used internally.
 struct Center_level_set :// "State variable" used in update_ODE to compute advection diffusion equation
 	boost::additive1<Center_level_set,
 	boost::additive2<Center_level_set, value_type,
@@ -134,6 +134,7 @@ struct Center_level_set :// "State variable" used in update_ODE to compute advec
 	bool need_split(const Center_level_set&, const Advection_diffusion_eqn&, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);
 };
 Center_level_set abs(const Center_level_set& p1);
+//Following template defines vector-space algebra on center_level_set, which is required for using odeint solvers.
 namespace boost {
 	namespace numeric {
 		namespace odeint {
@@ -152,6 +153,7 @@ namespace boost {
 typedef std::function < value_type(const Particle current_state, const Particle prev_state, const value_type delta_t)> coupling_strength_function;
 typedef std::function<State_variable(const State_variable state_variable, const value_type coupling_strength)> coupling_velocity_function;
 struct Advection_diffusion_eqn {
+    //An advection diffusion equation consists of an advection velocity, a matrix-valued diffusion coefficient, a pair of functions to implement coupling, and a pair of functions to check domain.
 	vector_vector_function advection_velocity;
 	coupling_strength_function coupling_strength;
 	coupling_velocity_function coupling_velocity;
@@ -172,7 +174,7 @@ typedef tbb::concurrent_vector<Particle> particle_vector;
 class Population_density {
 public:
 	const index_type dimension;
-	//private: Note p_vect is not private only due to limit of tbb::concurrent_vector
+	//private: Note p_vect should be considered private, and is not private only due to limit of tbb::concurrent_vector
 	particle_vector p_vect;//container for the particles
 public:
 	//constructor: 
@@ -244,6 +246,11 @@ public:
 	// x_array: dimension*particle_count
 	// w_array: 1*particle_count
 	// sigma_array: dimension*dimension*particle_count 3_D array
+    //hdf5 file structure: //All data is of 64-bit floating-point format
+    //need to contain the following 3 datasets with matching particle count and dimension
+    // x_array: particle_count*dimension
+    // w_array: particle_count*1
+    // sigma_array: particle_count*dimension*dimension
 protected:
     std::vector<double> get_location_in_dimension_n(const index_type n) const;
     std::vector<double> get_weight() const;
@@ -254,12 +261,13 @@ protected:
 class Population_density_with_equation : public Population_density {
 public:
     const Advection_diffusion_eqn adv_diff_eqn;
+    //Population_density_with_equation contains advection diffusion equation initialized at declaration
     double coupling_at_previous_timestep() const {
+        //returns coupling at previous time step
         return coupling_strength_sum;
     }
-    const value_type tau;
-    //tau NOW only affect particle combination. Larger tau leads to less aggressive particle combination.
-    const value_type lambda;//regulariztion factor
+    const value_type tau;//tau affect particle combination. Larger tau leads to more aggressive particle combination.
+    const value_type lambda;//Tikhonov regulariztion factor
     const value_type alpha;//advection velocity relative distance. alpha small uses level set closer to center.
 private:
     void set_ODE(const Advection_diffusion_eqn& adv_diff_eqn);
@@ -291,7 +299,7 @@ public:
     void split_particles(const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);//Split all particles that are too large. No need to call if using update_ODE_adaptive_split
     void combine_particles();//combine particles. Should be called between each update_ODE step
 };
-
+//Below are function used internally, or obsolete. They are included in the header only due to unit test. 
 void approximate_jacobian(Matrix_type& jacobian, const vector_vector_function& full_derivative, const State_variable& x);//Assumes output is already initialized.
 Matrix_type approximate_jacobian(const vector_vector_function& full_derivative, const State_variable& x);
 std::vector<Particle> split_particle(const Particle x, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);

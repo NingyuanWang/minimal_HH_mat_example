@@ -14,7 +14,7 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 	}
 	Advection_diffusion_eqn* HH = set_Hodgkin_Huxley_eqn(diffusion_coeff, coupling_strength, coupling_potential);
 	double plot_xlb, plot_xub, plot_ylb, plot_yub;
-	a_ptr = new Population_density_with_equation(*HH,4, tau,lambda,alpha);
+	a_ptr = new Population_density_with_equation(*HH,4, tau,lambda,alpha);//NOTE: 4 is the dimension of HH model. Change this to match your model.
 	a_ptr->input_all_particles(ICfilename.c_str());
 	if (g_display_density)
 	{
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
 	boost::program_options::options_description params("Parameters");
 	params.add_options()
 		("help,h", "produce help message")
-		("diffusion_coeff,d", boost::program_options::value<double>(&diffusion_coeff)->default_value(1e-4), "diffusion coefficient")
+		("diffusion_coeff,d", boost::program_options::value<double>(&diffusion_coeff)->default_value(1e-5), "diffusion coefficient")
 		("coupling_strength,c", boost::program_options::value<double>(&coupling_strength)->default_value(0.4), "coupling strength")
         ("coupling_potential,V", boost::program_options::value<double>(&coupling_potential)->default_value(35), "mV - coupling potential")
 		("tau", boost::program_options::value<double>(&tau)->default_value(0.0001), "parameter tau. affects std deviation cutoff for combine, and diffusion regularization")
