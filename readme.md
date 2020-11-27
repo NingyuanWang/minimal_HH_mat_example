@@ -102,7 +102,7 @@ The program uses `boost::program_options` to parse options, and help
 info can be accessed using the `-h` option:
 
 ![Help message produced by the
-program](help_message){width="\textwidth"}
+program](help_message.png){width="\textwidth"}
 
 By default, the program will not produce any visual output as
 `-i (–plot_interval) = 0`, and the only output files are
@@ -115,7 +115,7 @@ Using the `-i %d` option will generate a visualization that looks as
 follows:
 
 ![A screenshot of the
-visualization](visualization_screenshot){width="\textwidth"}
+visualization](visualization_screenshot.png){width="\textwidth"}
 
 Note that the plots, especially the density heat map is computationally
 intensive, and will significantly slow down the program.
