@@ -1,12 +1,19 @@
-Building a program with an example model
-========================================
+Building and running the example program with Hodgkin-Huxley model
+==================================================================
 
 (NOTE: This document is converted from a latex file using pandoc. If certain part appears to be broken, please refer to the pdf file inside the root directory.)
+Structure of the repository
+---------------------------
 
-The code is written using `C++`, and the example program is built on a
-`Windows` machine using `Microsoft Visual studio 2019`. The instruction
-will be based on this environment though the principle for building this
-program on other platform is similar. Since this program uses external
+This repository contains the source code for the method, in the form of
+a `C++` library, that consists of `particle_method.h` and
+`particle_method.cpp`, as well as an example program, which serves as a
+suggestion on how the library can be used. The example can be viewed by
+opening the `minimal_HH_mat_example.sln` solution file. The code is
+written using `C++`, and the example program is built on a `Windows`
+machine using `Microsoft Visual studio 2019`. The instruction will be
+based on this environment though the principle for building this program
+on other platform is similar. Since this program uses external
 libraries, some patience is needed in setting the program to work.
 
 Required external libraries
@@ -88,8 +95,42 @@ Common issues and solution
     stored in system `PATH` variable would determine which `hdf5.dll`
     will be used.
 
+Running the example program
+---------------------------
+
+The program uses `boost::program_options` to parse options, and help
+info can be accessed using the `-h` option:
+
+![Help message produced by the
+program](help_message){width="\textwidth"}
+
+By default, the program will not produce any visual output as
+`-i (–plot_interval) = 0`, and the only output files are
+`HHTestatend.mat`, which stores the end condition of the system as a
+linear combination of particles, and
+`coupling_strength_diff_X_coup_Y.mat`, which logs the coupling strength,
+averaged membrane potential, and particle count through the process.
+
+Using the `-i %d` option will generate a visualization that looks as
+follows:
+
+![A screenshot of the
+visualization](visualization_screenshot){width="\textwidth"}
+
+Note that the plots, especially the density heat map is computationally
+intensive, and will significantly slow down the program.
+
+Adapting the program to different problems
+==========================================
+
+The example program is called *minimal* in the sense that only the most
+common parameters can be adjusted at run time, whereas the model and
+other parameters are determined at compile time, in order to present a
+short example. To adapt the program to a different model, the following
+areas needs to be considered:
+
 Modifying models and parameters {#str:Advdiffeqn}
-===============================
+-------------------------------
 
 In the example project, the models are contained in the `set_hh_eqns.h`
 and `set_SAN_eqns.h` for the Hodgkin-Huxley and Simplified averaged
@@ -260,13 +301,27 @@ with additional comment:
         return eqn_ptr;
     }
 
-To setup an instance to solve, additional parameters (such as timestep,
-total timestep count, and scalar parameters) as well as intial
-conditions need to be set. `minimal_HH_neuron_example.cpp` provides an
-example main function that allows all additional parameters to be set at
-runtime. Customizations to the matlab visualization that are specific to
-the HH model is also included in this file. The initial condition is
-defined by a `mat` file with following variables:
+Modifying procedural source file
+--------------------------------
+
+After changing the model files, additional parameters independent from
+the model(such as timestep, total timestep count, and scalar parameters)
+needs modification as well. The procedural setup of the model in `main`
+and related functions also needs to be adjusted accordingly. How the
+desired parameters can be introduced is a generic programming problem
+and is beyond the scope here. However, we remind readers that:
+
+-   Inside `run_HH_model`, make sure that the dimension are set
+    correctly
+
+-   The plot parameters used here are specific to the chosen
+    Hodgkin-Huxley model here
+
+Modifying initial condition
+---------------------------
+
+The initial condition is defined by a `mat` file with following
+variables:
 
     %d-dimensional state variable, with initial condition as a linear combination of n particles:
     w_array%1* n matrix, defines weight of each particle
@@ -281,10 +336,6 @@ files will have reversed dimension ordering. An initial condition in
     x_array//n*d matrix of 64-bit floating-point
     w_array//n*1 matrix of 64-bit floating-point
     sigma_array//n*d*d matrix of 64-bit floating-point
-
-Instructions for setting such a system with desired parameters and
-initial condition is done at run time, and is accessible by using the
-`-h` option when executing program.
 
 Usage for individual functions
 ==============================
