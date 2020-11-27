@@ -165,7 +165,10 @@
 \begin{document}
 \setlength{\parindent}{0pt}
 \maketitle
-\section{Building a program with an example model}
+
+\section{Building and running the example program with Hodgkin-Huxley model}
+\subsection{Structure of the repository}
+This repository contains the source code for the method, in the form of a \texttt{C++} library, that consists of \texttt{particle\_method.h} and \texttt{particle\_method.cpp}, as well as an example program, which serves as a suggestion on how the library can be used. The example can be viewed by opening the \texttt{minimal\_HH\_mat\_example.sln} solution file.
 The code is written using \texttt{C++}, and the example program is built on a \texttt{Windows} machine using \texttt{Microsoft Visual studio 2019}. The instruction will be based on this environment though the principle for building this program on other platform is similar. Since this program uses external libraries, some patience is needed in setting the program to work.
 \subsection{Required external libraries}
 The list of required libraries are listed according the specific header and source file loaded. 
@@ -211,8 +214,24 @@ The projects in the solution are set to use the \texttt{matlab} version out-of-b
 \item
 undefined reference to \texttt{some\_function} at \texttt{xx.dll} at run time. In addition to the common cause of not properly setting the correct version of \texttt{matlab}, this is also likely to be caused by a conflict in \texttt{dll} file. \texttt{HDF5} and \texttt{matlab} both comes with \texttt{hdf5.dll}, however they are not interchangeable. To make sure the correct \texttt{dll} is loaded, check if \texttt{hdf5.dll} exist in current directory or the \texttt{Windows\textbackslash System32} directory. Then, the order of the directories stored in system \texttt{PATH} variable would determine which \texttt{hdf5.dll} will be used.
 \end{itemize}
+\subsection{Running the example program}
+The program uses \texttt{boost::program\_options} to parse options, and help info can be accessed using the \texttt{-h} option:
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{help_message}
+\caption{Help message produced by the program}
+\end{figure}
 
-\section{Modifying models and parameters}
+By default, the program will not produce any visual output as \texttt{-i (--plot\_interval) = 0}, and the only output files are \texttt{HHTestatend.mat}, which stores the end condition of the system as a linear combination of particles, and \texttt{coupling\_strength\_diff\_X\_coup\_Y.mat}, which logs the coupling strength, averaged membrane potential, and particle count through the process. 
+
+Using the \texttt{-i \%d} option will generate a visualization that looks as follows: 
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{visualization_screenshot}
+\caption{A screenshot of the visualization}
+\end{figure}
+Note that the plots, especially the density heat map is computationally intensive, and will significantly slow down the program. 
+\section{Adapting the program to different problems}
+The example program is called \emph{minimal} in the sense that only the most common parameters can be adjusted at run time, whereas the model and other parameters are determined at compile time, in order to present a short example. To adapt the program to a different model, the following areas needs to be considered: 
+\subsection{Modifying models and parameters}
 \label{str:Advdiffeqn}
 In the example project, the models are contained in the \texttt{set\_hh\_eqns.h} and \texttt{set\_SAN\_eqns.h} for the Hodgkin-Huxley and Simplified averaged neuron model respectively. To set a model, a custom \texttt{struct Advection\_diffusion\_eqn} with the following properties needs to be defined:
 \begin{lstlisting}
@@ -374,8 +393,17 @@ Advection_diffusion_eqn* set_Hodgkin_Huxley_eqn(const value_type diffusion_coeff
     eqn_ptr->state_variable_restrict_to_domain = state_variable_restrict_to_domain;
     return eqn_ptr;
 }
-\end{lstlisting}
-To setup an instance to solve, additional parameters (such as timestep, total timestep count, and scalar parameters) as well as intial conditions need to be set. \texttt{minimal\_HH\_neuron\_example.cpp} provides an example main function that allows all additional parameters to be set at runtime. Customizations to the matlab visualization that are specific to the HH model is also included in this file. The initial condition is defined by a \texttt{mat} file with following variables:
+\end{lstlisting} 
+\subsection{Modifying procedural source file}
+After changing the model files, additional parameters independent from the model(such as timestep, total timestep count, and scalar parameters) needs modification as well. The procedural setup of the model in \texttt{main} and related functions also needs to be adjusted accordingly. How the desired parameters can be introduced is a generic programming problem and is beyond the scope here. However, we remind readers that:
+\begin{itemize}
+\item
+Inside \texttt{run\_HH\_model}, make sure that the dimension are set correctly
+\item
+The plot parameters used here are specific to the chosen Hodgkin-Huxley model here
+\end{itemize}
+\subsection{Modifying initial condition}
+The initial condition is defined by a \texttt{mat} file with following variables:
 \begin{lstlisting}
 %d-dimensional state variable, with initial condition as a linear combination of n particles:
 w_array%1* n matrix, defines weight of each particle
@@ -389,8 +417,6 @@ x_array//n*d matrix of 64-bit floating-point
 w_array//n*1 matrix of 64-bit floating-point
 sigma_array//n*d*d matrix of 64-bit floating-point
 \end{lstlisting}
-
-Instructions for setting such a system with desired parameters and initial condition is done at run time, and is accessible by using the \texttt{-h} option when executing program.
 \section{Usage for individual functions}
 This section documents the usage of the functions and objects defined in \texttt{particle\_method.h}.
 \begin{itemize}
