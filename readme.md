@@ -1,7 +1,6 @@
 Building and running the example program with Hodgkin-Huxley model
 ==================================================================
 
-(NOTE: This document is converted from a latex file using pandoc. If certain part appears to be broken, please refer to the pdf file inside the root directory.)
 Structure of the repository
 ---------------------------
 
@@ -102,7 +101,7 @@ The program uses `boost::program_options` to parse options, and help
 info can be accessed using the `-h` option:
 
 ![Help message produced by the
-program](help_message.png){width="\textwidth"}
+program](help_message){width="\textwidth"}
 
 By default, the program will not produce any visual output as
 `-i (–plot_interval) = 0`, and the only output files are
@@ -115,10 +114,42 @@ Using the `-i %d` option will generate a visualization that looks as
 follows:
 
 ![A screenshot of the
-visualization](visualization_screenshot.png){width="\textwidth"}
+visualization](visualization_screenshot){width="\textwidth"}
 
 Note that the plots, especially the density heat map is computationally
 intensive, and will significantly slow down the program.
+
+Program options in the example program
+--------------------------------------
+
+-   `-d –diffusion_coeff` Changes the diffusion coefficient. The
+    diffusion coefficient is set to be isotropic in this
+    example program.
+
+-   `–tol` Tolerance for the linear approximation, as relative error,
+    before a particle needs to be split. Increasing tolerance decreases
+    the number of particles, however it can lead to inaccurate results.
+
+-   `-s –stepsize` Maximum step size for the adaptive time step
+    differential equation solver. Increasing time step may lead to
+    slower computation time as additional split of particles may be
+    introduced during each time step.
+
+-   `-p –projection_dimension` Index of dimensions to project to in the
+    scatter plot of population density. The projection can be onto a
+    1,2, or 3 dimensional subspace. The index starts at 0.
+
+-   `-q –density_projection_dimension` Index of dimensions to project to
+    in the density plot of population density. The projection can be
+    onto a 1 or 2 dimensional subspace. The index starts at 0.
+
+-   `-v –video` Generates a video of all plots drawn during the duration
+    of the simulation. Please note that in `matlab 2019b` or later
+    versions, the default save location for the video is the folder
+    where the `matlab` executable file is located, instead of the folder
+    where this example program is located. To change the behavior, use
+    `cd` command in `matlab` to change the output path to the
+    desired location.
 
 Adapting the program to different problems
 ==========================================
@@ -337,8 +368,8 @@ files will have reversed dimension ordering. An initial condition in
     w_array//n*1 matrix of 64-bit floating-point
     sigma_array//n*d*d matrix of 64-bit floating-point
 
-Usage for individual functions
-==============================
+Usage for individual functions in `particle_method.h`
+=====================================================
 
 This section documents the usage of the functions and objects defined in
 `particle_method.h`.

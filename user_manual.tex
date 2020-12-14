@@ -229,6 +229,26 @@ Using the \texttt{-i \%d} option will generate a visualization that looks as fol
 \caption{A screenshot of the visualization}
 \end{figure}
 Note that the plots, especially the density heat map is computationally intensive, and will significantly slow down the program. 
+\subsection{Program options in the example program}
+\begin{itemize}
+\item
+\texttt{-d --diffusion\_coeff}
+Changes the diffusion coefficient. The diffusion coefficient is set to be isotropic in this example program.
+\item
+\texttt{--tol} 
+Tolerance for the linear approximation, as relative error, before a particle needs to be split. Increasing tolerance decreases the number of particles, however it can lead to inaccurate results. 
+\item
+\texttt{-s --stepsize} Maximum step size for the adaptive time step differential equation solver. Increasing time step may lead to slower computation time as additional split of particles may be introduced during each time step.
+\item
+\texttt{-p --projection\_dimension}
+Index of dimensions to project to in the scatter plot of population density. The projection can be onto a 1,2, or 3 dimensional subspace. The index starts at 0.
+\item
+\texttt{-q --density\_projection\_dimension}
+Index of dimensions to project to in the density plot of population density. The projection can be onto a 1 or 2 dimensional subspace. The index starts at 0.
+\item
+\texttt{-v --video}
+Generates a video of all plots drawn during the duration of the simulation. Please note that in \texttt{matlab 2019b} or later versions, the default save location for the video is the folder where the \texttt{matlab} executable file is located, instead of the folder where this example program is located. To change the behavior, use \texttt{cd} command in \texttt{matlab} to change the output path to the desired location.
+\end{itemize}
 \section{Adapting the program to different problems}
 The example program is called \emph{minimal} in the sense that only the most common parameters can be adjusted at run time, whereas the model and other parameters are determined at compile time, in order to present a short example. To adapt the program to a different model, the following areas needs to be considered: 
 \subsection{Modifying models and parameters}
@@ -417,7 +437,7 @@ x_array//n*d matrix of 64-bit floating-point
 w_array//n*1 matrix of 64-bit floating-point
 sigma_array//n*d*d matrix of 64-bit floating-point
 \end{lstlisting}
-\section{Usage for individual functions}
+\section{Usage for individual functions in \texttt{particle\_method.h}}
 This section documents the usage of the functions and objects defined in \texttt{particle\_method.h}.
 \begin{itemize}
 \item
