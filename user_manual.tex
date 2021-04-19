@@ -169,31 +169,23 @@
 \section{Building and running the example program with Hodgkin-Huxley model}
 \subsection{Structure of the repository}
 This repository contains the source code for the method, in the form of a \texttt{C++} library, that consists of \texttt{particle\_method.h} and \texttt{particle\_method.cpp}, as well as an example program, which serves as a suggestion on how the library can be used. The example can be viewed by opening the \texttt{minimal\_HH\_mat\_example.sln} solution file.
-The code is written using \texttt{C++}, and the example program is built on a \texttt{Windows} machine using \texttt{Microsoft Visual studio 2019}. The instruction will be based on this environment though the principle for building this program on other platform is similar. Since this program uses external libraries, some patience is needed in setting the program to work.
-\subsection{Required external libraries}
-The list of required libraries are listed according the specific header and source file loaded. 
+The code is written using \texttt{C++}, and the example cmake project is tested to work on a \texttt{Windows} machine using \texttt{Microsoft Visual studio 2019}. The instruction will be based on this environment though the principle for building this program on other platform should be similar.
+\subsection{Generating project on \texttt{Windows} using \texttt{cmake-gui}}
+The list of required libraries are listed according the specific header and source file loaded. \texttt{cmake} is used to automatically find all the required libraries and generate the project file based on environment. When configuring the \texttt{cmake} project, make sure \texttt{x64} is selected:
+
+
 \begin{itemize}
 \item
 \texttt{particle\_method.h} and \texttt{particle\_method.cpp}
 
-There are two options for building these files. If macro \texttt{MATLAB\_VISUALIZE} is enabled, then \texttt{matlab} is required, and \texttt{libeng.lib;libmx.lib;libmat.lib;} are library files needed to be added at \texttt{Linker\textrightarrow Input\textrightarrow Additional dependencies} in the project property pages. Please refer to \href{www.mathworks.com/matlabcentral/answers/406574-how-can-i-compile-a-c-program-that-uses-matlab-engine-c-api-in-visual-studio-2017}{this page from mathworks website} for further instruction. Additonally, the system environment \texttt{MATLAB} should be set to the \texttt{matlab} root folder.
+There are two options for building these files. If macro \texttt{MATLAB\_VISUALIZE} is enabled, then \texttt{matlab} is required, and \texttt{libeng.lib;libmx.lib;libmat.lib;} are library files needed to be added at \texttt{Linker\textrightarrow Input\textrightarrow Additional dependencies} in the project property pages. Please refer to \href{www.mathworks.com/matlabcentral/answers/406574-how-can-i-compile-a-c-program-that-uses-matlab-engine-c-api-in-visual-studio-2017}{this page from mathworks website} for further instruction. The example project is configured with \texttt{MATLAB\_VISUALIZE} enabled.
+\begin{figure}[H]
+\includegraphics[width=0.5 \textwidth]{cmake_step1}
+\caption{Select \texttt{x64} platform when configuring project}
+\end{figure}
+Alternatively, when real-time visualization is not required and the use of a commercial software is not preferred, the \texttt{HDF5} serves as an alternative data input output library. 
 
-Alternatively, when real-time visualization is not required and the use of a large program is not preferred, the \texttt{HDF5} serves as an alternative data input output library. We recommend using \texttt{vcpkg} to setup \texttt{HDF5} library in visual studio. The following command
-\begin{lstlisting}
-vcpkg install hdf5[cpp]:x64-windows --recurse
-\end{lstlisting}
-  would download this package. Be warned that \texttt{hdf5} and \texttt{matlab} have conflicting \texttt{dll} files, and it is important to check which \texttt{dll} file is loaded at runtime. If \texttt{vcpkg} is not used, then \texttt{zlib.lib;hdf5.lib;hdf5\_cpp.lib} needed to be added at \texttt{Linker\textrightarrow Input\textrightarrow Additional dependencies}
-
-Independent of the two options, \texttt{intel-tbb} is required for parallel computing. Additionally, \texttt{boost} and \texttt{Eigen} are libraries required. The following command
-\begin{lstlisting}
-vcpkg install tbb:x64-windows --recurse
-vcpkg install boost[boost-odeint]:x64-windows
-vcpkg install boost[boost-ublas]:x64-windows
-vcpkg install boost[boost-program-options]:x64-windows
-vcpkg install eigen3:x64-windows
-\end{lstlisting}
-
-would set these libraries. If \texttt{vcpkg} is not used, \texttt{tbb.lib} needs to be added to \texttt{Linker\textrightarrow Input\textrightarrow Additional dependencies}.
+Independent of the two options, \texttt{intel-tbb} is required for parallel computing. Additionally, \texttt{boost} and \texttt{Eigen} are libraries required. 
 
 \item
 \texttt{minimal\_XX\_neuron\_example.cpp}
@@ -203,6 +195,10 @@ The \texttt{boost-program-options} is needed to compile this file. If \texttt{vc
 \texttt{set\_XX\_eqns.h}
 This header file does not require additional library to build.
 \end{itemize}
+\begin{figure}[H]
+\includegraphics[width=0.7 \textwidth]{cmake_step2}
+\caption{An example variables if \texttt{cmake} project is configured correctly.}
+\end{figure}
 \subsection{Building the program}
 
 The projects in the solution are set to use the \texttt{matlab} version out-of-box. The program should build with one click if the external libraries are correctly set.

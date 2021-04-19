@@ -9,17 +9,18 @@ a `C++` library, that consists of `particle_method.h` and
 `particle_method.cpp`, as well as an example program, which serves as a
 suggestion on how the library can be used. The example can be viewed by
 opening the `minimal_HH_mat_example.sln` solution file. The code is
-written using `C++`, and the example program is built on a `Windows`
-machine using `Microsoft Visual studio 2019`. The instruction will be
-based on this environment though the principle for building this program
-on other platform is similar. Since this program uses external
-libraries, some patience is needed in setting the program to work.
+written using `C++`, and the example cmake project is tested to work on
+a `Windows` machine using `Microsoft Visual studio 2019`. The
+instruction will be based on this environment though the principle for
+building this program on other platform should be similar.
 
-Required external libraries
----------------------------
+Generating project on `Windows` using `cmake-gui`
+-------------------------------------------------
 
 The list of required libraries are listed according the specific header
-and source file loaded.
+and source file loaded. `cmake` is used to automatically find all the
+required libraries and generate the project file based on environment.
+When configuring the `cmake` project, make sure `x64` is selected:
 
 -   `particle_method.h` and `particle_method.cpp`
 
@@ -29,34 +30,18 @@ and source file loaded.
     added at `LinkerInputAdditional dependencies` in the project
     property pages. Please refer to [this page from mathworks
     website](www.mathworks.com/matlabcentral/answers/406574-how-can-i-compile-a-c-program-that-uses-matlab-engine-c-api-in-visual-studio-2017)
-    for further instruction. Additonally, the system environment
-    `MATLAB` should be set to the `matlab` root folder.
+    for further instruction. The example project is configured with
+    `MATLAB_VISUALIZE` enabled.
+
+    ![Select `x64` platform when configuring
+    project](cmake_step1.png){width="0.5 \\textwidth"}
 
     Alternatively, when real-time visualization is not required and the
-    use of a large program is not preferred, the `HDF5` serves as an
-    alternative data input output library. We recommend using `vcpkg` to
-    setup `HDF5` library in visual studio. The following command
+    use of a commercial software is not preferred, the `HDF5` serves as
+    an alternative data input output library.
 
-        vcpkg install hdf5[cpp]:x64-windows --recurse
-
-    would download this package. Be warned that `hdf5` and `matlab` have
-    conflicting `dll` files, and it is important to check which `dll`
-    file is loaded at runtime. If `vcpkg` is not used, then
-    `zlib.lib;hdf5.lib;hdf5_cpp.lib` needed to be added at
-    `LinkerInputAdditional dependencies`
-
-    Independent of the two options, `intel-tbb` is required for
-    parallel computing. Additionally, `boost` and `Eigen` are
-    libraries required. The following command
-
-        vcpkg install tbb:x64-windows --recurse
-        vcpkg install boost[boost-odeint]:x64-windows
-        vcpkg install boost[boost-ublas]:x64-windows
-        vcpkg install boost[boost-program-options]:x64-windows
-        vcpkg install eigen3:x64-windows
-
-    would set these libraries. If `vcpkg` is not used, `tbb.lib` needs
-    to be added to `LinkerInputAdditional dependencies`.
+    Independent of the two options, `intel-tbb` is required for parallel
+    computing. Additionally, `boost` and `Eigen` are libraries required.
 
 -   `minimal_XX_neuron_example.cpp`
 
@@ -67,6 +52,9 @@ and source file loaded.
 
 -   `set_XX_eqns.h` This header file does not require additional library
     to build.
+
+![An example variables if `cmake` project is configured
+correctly.](cmake_step2.png){width="0.7 \\textwidth"}
 
 Building the program
 --------------------
@@ -81,8 +69,8 @@ Common issues and solution
 -   `LNK2001` at build time. Likely due to libraries not setup
     correctly, which may occur either when library is missing, or
     different versions of the same library exist. Using `vcpkg` would
-    reduce the chance of this happening than manually tracing
-    each library.
+    reduce the chance of this happening than manually tracing each
+    library.
 
 -   undefined reference to `some_function` at `xx.dll` at run time. In
     addition to the common cause of not properly setting the correct
@@ -101,7 +89,7 @@ The program uses `boost::program_options` to parse options, and help
 info can be accessed using the `-h` option:
 
 ![Help message produced by the
-program](help_message){width="\textwidth"}
+program](help_message.png){width="\\textwidth"}
 
 By default, the program will not produce any visual output as
 `-i (–plot_interval) = 0`, and the only output files are
@@ -114,7 +102,7 @@ Using the `-i %d` option will generate a visualization that looks as
 follows:
 
 ![A screenshot of the
-visualization](visualization_screenshot){width="\textwidth"}
+visualization](visualization_screenshot.png){width="\\textwidth"}
 
 Note that the plots, especially the density heat map is computationally
 intensive, and will significantly slow down the program.
@@ -123,8 +111,8 @@ Program options in the example program
 --------------------------------------
 
 -   `-d –diffusion_coeff` Changes the diffusion coefficient. The
-    diffusion coefficient is set to be isotropic in this
-    example program.
+    diffusion coefficient is set to be isotropic in this example
+    program.
 
 -   `–tol` Tolerance for the linear approximation, as relative error,
     before a particle needs to be split. Increasing tolerance decreases
@@ -148,8 +136,8 @@ Program options in the example program
     versions, the default save location for the video is the folder
     where the `matlab` executable file is located, instead of the folder
     where this example program is located. To change the behavior, use
-    `cd` command in `matlab` to change the output path to the
-    desired location.
+    `cd` command in `matlab` to change the output path to the desired
+    location.
 
 Adapting the program to different problems
 ==========================================
@@ -424,15 +412,17 @@ This section documents the usage of the functions and objects defined in
 
             value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
 
--   `struct Center_level_set` This is a struct that is only
-    used internally.
+-   `struct Center_level_set` This is a struct that is only used
+    internally.
 
--   `struct Adcection_diffusion_eqn` Refer to Section \[str:Advdiffeqn\]
-    for usage of member variables and functions.
+-   `struct Adcection_diffusion_eqn` Refer to Section
+    [2.1](#str:Advdiffeqn){reference-type="ref"
+    reference="str:Advdiffeqn"} for usage of member variables and
+    functions.
 
 -   `class Population_density` The class containing the population
-    density distribution, as a linear combination of particles
-    it contained.
+    density distribution, as a linear combination of particles it
+    contained.
 
     -   Member variables:
 
@@ -446,8 +436,8 @@ This section documents the usage of the functions and objects defined in
 
         Note that `p_vect` shall be treated as unavailable to access
         directly out side of the class scope, since the only reason for
-        it to be not private is due to constraints of the `tbb`
-        library used.
+        it to be not private is due to constraints of the `tbb` library
+        used.
 
     -   Constructor
 
@@ -507,8 +497,9 @@ This section documents the usage of the functions and objects defined in
         Independent of whether macro `MATLAB_VISUALIZE` is enabled or
         not, the following functions allows input and output of
         population density as linear combination of particles. Please
-        refer to the end of section \[str:Advdiffeqn\] for the format of
-        the files.
+        refer to the end of section
+        [2.1](#str:Advdiffeqn){reference-type="ref"
+        reference="str:Advdiffeqn"} for the format of the files.
 
                 void output_all_particles(const char output_filename[] = "particles.mat") const;//OUTPUT particles to a mat or h5 file
                 void input_all_particles(const char input_filename[] = "particles.mat");//INPUT particles to a mat or h5 file
@@ -546,5 +537,3 @@ This section documents the usage of the functions and objects defined in
     -   Additional helper functions:
 
             void check_linear_approx(const int particle_index) const;//prints information about accuracy of local linear approximation
-
-
