@@ -11,7 +11,7 @@ Advection_diffusion_eqn* set_Hodgkin_Huxley_eqn(const value_type diffusion_coeff
 		const value_type ek = -12;
 		const value_type gl = 0.3;
 		const value_type el = 10.613;
-		const value_type appcurr = 8.0;
+		const value_type appcurr = 10.0;
 		State_variable dxdt(4U);
 		value_type V = x[0] * 100.0;
 		V += 1e-6 * (abs(V - 10.0)<5e-7 || abs(V - 25.0)<5e-7 || abs(V - 50.0)<5e-7);

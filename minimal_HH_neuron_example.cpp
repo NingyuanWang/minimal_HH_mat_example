@@ -43,14 +43,14 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
 //Setting output of average voltage and coupling_strength
 	MATFile* output_matptr;
 	std::string mat_filename;
-	mat_filename = "coupling_strength_diff_" + std::to_string(int(100000 * diffusion_coeff)) + "_coup_" + std::to_string(int(10 * coupling_strength)) + ".mat";
+	mat_filename = "coupling_strength_diff_" + std::to_string(int(1e6 * diffusion_coeff)) + "_coup_" + std::to_string(int(10 * coupling_strength)) + ".mat";
 	output_matptr = matOpen(mat_filename.c_str(), "w");
 	mxArray *avg_potential_matlabarray;
-	mxArray *coupling_strength_matlabarray;
+	mxArray *coupling_porprotion_matlabarray;
 	mxArray *t_matlabarray;
 	mxArray *particle_count_matlabarray;
 	avg_potential_matlabarray = mxCreateDoubleMatrix(1, stepsize_count, mxREAL);
-	coupling_strength_matlabarray = mxCreateDoubleMatrix(1, stepsize_count, mxREAL);
+	coupling_porprotion_matlabarray = mxCreateDoubleMatrix(1, stepsize_count, mxREAL);
 	t_matlabarray = mxCreateDoubleMatrix(1, stepsize_count, mxREAL);
 	particle_count_matlabarray = mxCreateDoubleMatrix(1, stepsize_count, mxREAL);
 //Setting generation of video:
@@ -73,17 +73,20 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
         }
 
 		//Copy data to mat files: 
-		const double coupling_strength = a_ptr->coupling_at_previous_timestep();
+		const double coupling_porprotion = a_ptr->coupling_at_previous_timestep()/coupling_strength * time_stepsize;
 		const double particle_count = double(a_ptr->size());//convert to double
 		const double average_V = a_ptr->average_in_index(0);
 		memcpy(static_cast<double*>(mxGetPr(avg_potential_matlabarray)) + i, &average_V, sizeof(double));
-		memcpy(static_cast<double*>(mxGetPr(coupling_strength_matlabarray)) + i, &coupling_strength, sizeof(double));
+		memcpy(static_cast<double*>(mxGetPr(coupling_porprotion_matlabarray)) + i, &coupling_porprotion, sizeof(double));
 		memcpy(static_cast<double*>(mxGetPr(t_matlabarray)) + i, &t, sizeof(double));
 		memcpy(static_cast<double*>(mxGetPr(particle_count_matlabarray)) + i, &particle_count, sizeof(double));
 		if (g_display_density && (i - 1) % plot_interval == 0)
 		{
 			passplotcommand(global_matlab_engine, "subplot(2,1,1)");
-			a_ptr->plot(projection_dimension, "axis([-0.2,1.1,0,1,0,1]);view(10,20)");
+			a_ptr->plot(projection_dimension, "axis([-0.2,1.1,0,1,0,1])");
+			if (std::count(projection_dimension.begin(), projection_dimension.end(), true) >= 3) {
+				passplotcommand(global_matlab_engine, ";view(10,20);");
+			}
 			if (generate_video)
 			{
 				matlabarg = "title('t = " + std::to_string(t) + " ms')";
@@ -139,11 +142,11 @@ void run_HH_model(const double diffusion_coeff, const double coupling_strength, 
         std::cout << "Total Computation time: " << seconds_elapsed << " seconds." << std::endl;
     }
 	matPutVariable(output_matptr, "avg_potential", avg_potential_matlabarray);
-	matPutVariable(output_matptr, "coupling", coupling_strength_matlabarray);
+	matPutVariable(output_matptr, "coupling_porprotion", coupling_porprotion_matlabarray);
 	matPutVariable(output_matptr, "t", t_matlabarray);
 	matPutVariable(output_matptr, "particle_count", particle_count_matlabarray);
 	mxDestroyArray(avg_potential_matlabarray);
-	mxDestroyArray(coupling_strength_matlabarray);
+	mxDestroyArray(coupling_porprotion_matlabarray);
 	mxDestroyArray(t_matlabarray);
 	mxDestroyArray(particle_count_matlabarray);
     mxArray* t_computation_matlabarray;
