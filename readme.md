@@ -45,16 +45,13 @@ When configuring the `cmake` project, make sure `x64` is selected:
 
 -   `minimal_XX_neuron_example.cpp`
 
-    The `boost-program-options` is needed to compile this file. If
-    `vcpkg` is not used, then the correct version of
-    `libboost_program_options` needs to be added to
-    `LinkerInputAdditional dependencies`.
+
 
 -   `set_XX_eqns.h` This header file does not require additional library
     to build.
 
 ![An example variables if `cmake` project is configured
-correctly.](cmake_step2.png){width="0.7 \\textwidth"}
+correctly.](cmake_step2.png)
 
 Building the program
 --------------------
@@ -89,7 +86,7 @@ The program uses `boost::program_options` to parse options, and help
 info can be accessed using the `-h` option:
 
 ![Help message produced by the
-program](help_message.png){width="\\textwidth"}
+program](help_message.png)
 
 By default, the program will not produce any visual output as
 `-i (–plot_interval) = 0`, and the only output files are
@@ -102,7 +99,7 @@ Using the `-i %d` option will generate a visualization that looks as
 follows:
 
 ![A screenshot of the
-visualization](visualization_screenshot.png){width="\\textwidth"}
+visualization](visualization_screenshot.png)
 
 Note that the plots, especially the density heat map is computationally
 intensive, and will significantly slow down the program.
