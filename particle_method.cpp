@@ -695,6 +695,9 @@ std::array<Particle, 3> split_particle_in_direction(const Particle x, const Stat
 }
 double linear_approx_rel_error(const Particle& x, const State_variable& offset, const Advection_diffusion_eqn& adv_diff_eqn) {
 	const State_variable center_derivative = adv_diff_eqn.advection_velocity(x.center_location);
+	if (center_derivative.norm() < 1e-9) {//Avoid checking if derivative at center is 0.
+		return 0.0;
+	}
 	const State_variable near_center = x.center_location + offset;
 	const State_variable far_center = x.center_location + 2 * offset;
 	const State_variable far_center_deriv = (adv_diff_eqn.advection_velocity(far_center) - center_derivative)*0.5;
