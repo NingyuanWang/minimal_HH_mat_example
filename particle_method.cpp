@@ -660,7 +660,7 @@ std::array<Particle, 3> split_particle_in_direction(const Particle x, const Stat
 
     const value_type weight_noncenter_child_ratio = 0.21921;//WAS 0.213109;
 	const value_type weight_center_child_ratio = 1.0 - 2 * weight_noncenter_child_ratio;
-    const value_type distance_ratio = 1.040621;//a = UPDATE: 1.46133, w=0.21921
+    const value_type distance_ratio = 1.03332;//a = UPDATE: 1.46133, w=0.21921
     //const value_type distance_ratio = 1.040621;//WAS 1.47166, changed to 1.47166/sqrt(2) due to a change in form of kernel function (2pi vs 4pi);
 	const Matrix_type direction_outer_product = offset * offset.transpose();
 	//left child: 
