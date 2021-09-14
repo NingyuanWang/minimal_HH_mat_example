@@ -9,8 +9,8 @@ FROM mathworks/matlab:r2021a
 ARG MLM_LICENSE_FILE
 RUN export CC="gcc"
 RUN export CXX="g++"
-RUN sudo mkdir ./build
-RUN cd ./build
+COPY . /cpp/src
+WORKDIR /cpp/src
 RUN sudo apt-get update
 RUN sudo apt-get install -y \
 	cmake \
@@ -20,8 +20,8 @@ RUN sudo apt-get install -y \
 	libeigen3-dev \
 	libtbb-dev \
 	ninja-build
-RUN sudo cmake .. -G Ninja
+RUN sudo cmake -G Ninja
 RUN sudo ninja
-RUN sudo cp ../HH_init_cond.mat ./
+#RUN sudo cp ../HH_init_cond.mat ./
 RUN sudo ./cmake_HH_example -h
 RUN sudo ./cmake_HH_example --silence
