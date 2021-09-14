@@ -14,6 +14,14 @@ a `Windows` machine using `Microsoft Visual studio 2019`. The
 instruction will be based on this environment though the principle for
 building this program on other platform should be similar.
 
+
+Running project inside container using Docker
+-------------------------------------------------
+
+The program works with docker. The real-time visualizations are not supported, and user is restricted to the file outputs. This serves as a basic illustration, as well as a reference to set environments locally on a Linux-based machine. For this, run this command line if the docker environment is correctly configured:
+
+`docker build https://github.com/NingyuanWang/minimal_HH_mat_example`
+
 Generating project on `Windows` using `cmake-gui`
 -------------------------------------------------
 
@@ -34,7 +42,7 @@ When configuring the `cmake` project, make sure `x64` is selected:
     `MATLAB_VISUALIZE` enabled.
 
     ![Select `x64` platform when configuring
-    project](cmake_step1.png){width="0.5 \\textwidth"}
+    project](cmake_step1.png)
 
     Alternatively, when real-time visualization is not required and the
     use of a commercial software is not preferred, the `HDF5` serves as
