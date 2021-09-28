@@ -1,5 +1,6 @@
 #pragma once
 #define DEFAULT_SPLIT_REL_ERROR 0.01
+const int g_plot_max_size_passed = 2048;
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #define _SCL_SECURE_NO_WARNINGS
@@ -269,6 +270,7 @@ public:
     const value_type tau;//tau affect particle combination. Larger tau leads to more aggressive particle combination.
     const value_type lambda;//Tikhonov regulariztion factor
     const value_type alpha;//advection velocity relative distance. alpha small uses level set closer to center.
+    const value_type split_relax_weight;//Particles with weight under split_relax_weight will be shrunk instead of be splitted
 private:
     void set_ODE(const Advection_diffusion_eqn& adv_diff_eqn);
     value_type coupling_strength_sum = 0.0;
@@ -288,8 +290,8 @@ private:
 #endif //DEBUG_DEADLOCK
 public:
     //constructor: 
-    Population_density_with_equation(const Advection_diffusion_eqn& adv_diff_eqn, const index_type state_space_dimension, const value_type tau = 0.01 / 4.0 / log(2.0), const value_type lambda = 1e-6, const value_type alpha = 0.2)
-        : Population_density(state_space_dimension),adv_diff_eqn(adv_diff_eqn), tau(tau), lambda(lambda), alpha(alpha) {
+    Population_density_with_equation(const Advection_diffusion_eqn& adv_diff_eqn, const index_type state_space_dimension, const value_type tau = 0.01 / 4.0 / log(2.0), const value_type lambda = 1e-6, const value_type alpha = 0.2, const value_type split_relax_weight = 1e-6)
+        : Population_density(state_space_dimension),adv_diff_eqn(adv_diff_eqn), tau(tau), lambda(lambda), alpha(alpha), split_relax_weight(split_relax_weight) {
         set_ODE(adv_diff_eqn);
     }
     void update_ODE_const(const value_type timestep, const index_type stepcount = 1);//Updates population density with fixed timestep
@@ -298,10 +300,11 @@ public:
     void check_linear_approx(const int particle_index) const;//prints information about accuracy of local linear approximation
     void split_particles(const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);//Split all particles that are too large. No need to call if using update_ODE_adaptive_split
     void combine_particles();//combine particles. Should be called between each update_ODE step
+    void uniform_shift(const State_variable& pertubation);//Shift all variables by pertubation
 };
 //Below are function used internally, or obsolete. They are included in the header only due to unit test. 
 void approximate_jacobian(Matrix_type& jacobian, const vector_vector_function& full_derivative, const State_variable& x);//Assumes output is already initialized.
 Matrix_type approximate_jacobian(const vector_vector_function& full_derivative, const State_variable& x);
-std::vector<Particle> split_particle(const Particle x, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);
+std::vector<Particle> split_particle(const Particle x, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR, const value_type split_relax_weight = 1e-6);
 std::vector<Particle> split_particle_old(const Particle x, const value_type tau);//A legacy version to keep compatibility with stuff not actively in use.
 bool need_split_in_direction(const Particle& x, const State_variable& offset, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);

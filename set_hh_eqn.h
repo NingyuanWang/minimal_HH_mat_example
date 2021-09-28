@@ -1,6 +1,11 @@
 //#define FIRING_THRESHOLD_IGNORE_VARIANCE
-Advection_diffusion_eqn* set_Hodgkin_Huxley_eqn(const value_type diffusion_coeff, const value_type coupling_strength_coefficient, const value_type coupling_potential) {
-    auto eqn_ptr = new Advection_diffusion_eqn(4, diffusion_coeff, false);
+struct Model_options {
+    value_type diffusion_coeff;
+    value_type coupling_strength_coefficient;
+    value_type coupling_potential;
+};
+Advection_diffusion_eqn* set_Hodgkin_Huxley_eqn(const Model_options mo) {
+    auto eqn_ptr = new Advection_diffusion_eqn(4, mo.diffusion_coeff, false);
     vector_vector_function advection_dynamics;
     coupling_velocity_function coupling_velocity;
     coupling_strength_function coupling_strength;
@@ -38,6 +43,7 @@ Advection_diffusion_eqn* set_Hodgkin_Huxley_eqn(const value_type diffusion_coeff
         //std::cout << dxdt;
         return dxdt;
     };
+    const double coupling_strength_coefficient = mo.coupling_strength_coefficient;
     coupling_strength = [coupling_strength_coefficient](const Particle& current_state, const Particle& prev_state, const value_type coupling_time_step) {
         //NOTE: coupling strength should compute the average flow rate over the coupling_time_step period, NOT the instantaneous flow rate at a given time. 
         //The choice is made to avoid computing coupling strength on a derivative, 
@@ -63,7 +69,7 @@ Advection_diffusion_eqn* set_Hodgkin_Huxley_eqn(const value_type diffusion_coeff
 
         return population_proportion * coupling_strength_coefficient / coupling_time_step * current_state.weight;
     };
-    const value_type coupling_potential_rescaled = coupling_potential / 100.0;
+    const value_type coupling_potential_rescaled = mo.coupling_potential / 100.0;
     coupling_velocity = [coupling_potential_rescaled](const State_variable& target, const value_type coupling_strength) {
         //dV/dt = k(V_c - V) 
         State_variable rval(target.size());

@@ -502,7 +502,7 @@ std::tuple<bool, double,State_variable> Population_density_with_equation::update
     //Check approx validity at initial time step:
     const auto lin_approx_rel_error_prev_state = particle_linear_approx_rel_error(*itr, adv_diff_eqn);
     namespace odeint = boost::numeric::odeint;
-    typedef odeint::runge_kutta_cash_karp54<Center_level_set, value_type, Center_level_set, value_type, odeint::vector_space_algebra> Center_level_set_stepper;
+    typedef odeint::runge_kutta_bogacki_shampine32<Center_level_set, value_type, Center_level_set, value_type, odeint::vector_space_algebra> Center_level_set_stepper;
     typedef odeint::runge_kutta_bogacki_shampine32<Center_level_set, value_type, Center_level_set, value_type, odeint::vector_space_algebra> Center_level_set_low_order_stepper;
     //Convert Covariance matrix to "level set" form:
     Center_level_set center_level_set = itr->to_center_level_set();
@@ -619,6 +619,11 @@ value_type Population_density_with_equation::update_particle_at_index(const Adve
         if (timestep - std::get<1>(update_result) > 0.0)
         {
             coupling_before_split = adv_diff_eqn.coupling_strength(*itr, prev_state, coupling_timestep);
+        }
+        //Low weight relaxed_treatment:
+        if (itr->weight < split_relax_weight) {
+            itr->covariance_matrix /= 2;
+            return coupling_before_split + update_particle_at_index(adv_diff_eqn, remaining_time, coupling_timestep, itr);
         }
         //2. Split particles. 
         const auto particle_children = split_particle_in_direction(*itr, std::get<2>(update_result));
@@ -740,10 +745,16 @@ bool need_split_in_direction(const Particle& x, const State_variable& offset, co
         return true;
     return false;
 }
-std::vector<Particle> split_particle(const Particle x, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound) {
+std::vector<Particle> split_particle(const Particle x, const Advection_diffusion_eqn& adv_diff_eqn, const value_type rel_error_bound, const value_type split_relax_weight) {
+    std::vector<Particle> rval;
+    //Small weight: shrink instead of split:
+    if (x.weight < split_relax_weight) {
+        rval.push_back(x);
+        rval[0].covariance_matrix = rval[0].covariance_matrix / 2;
+        return rval;
+    }
     //Checked output okay.
     auto svd_structure = x.covariance_matrix.jacobiSvd(Eigen::ComputeFullU);
-    std::vector<Particle> rval;
     const index_type dim = x.center_location.size();
     Particle child_left, child_center, child_right;
     const Matrix_type U = svd_structure.matrixU();
@@ -949,13 +960,19 @@ void Population_density_with_equation::split_particles(const value_type rel_erro
                 std::cout << "NaN at particle " << i << " center: " << this->operator[](i).center_location.transpose();
                 std::cout << "\nCovariance: \n" << this->operator[](i).covariance_matrix << std::endl;
             }
-            const auto splited_particle_vector = split_particle(this->operator[](i), adv_diff_eqn, rel_error_bound);
+            const auto splited_particle_vector = split_particle(this->operator[](i), adv_diff_eqn, rel_error_bound,split_relax_weight);
+            p_vect[i] = splited_particle_vector[0];
             if (splited_particle_vector.size() >= 2) {
-                p_vect[i] = splited_particle_vector[0];
-                for (int j = 1; j < splited_particle_vector.size(); j++) {
-                    p_vect.push_back(splited_particle_vector[j]);
-                }
+                p_vect.grow_by(splited_particle_vector.begin() + 1, splited_particle_vector.end());
             }
+        }
+    });
+}
+void Population_density_with_equation::uniform_shift(const State_variable& pertubation) {
+    tbb::parallel_for(tbb::blocked_range<int>(0, p_vect.size()), [&](tbb::blocked_range<int>& index_range) 
+    {
+            for (int i = index_range.begin(); i < index_range.end(); i++) {
+                p_vect[i].center_location = p_vect[i].center_location + pertubation;
         }
     });
 }
@@ -1169,9 +1186,8 @@ Plot_handle Population_density::plot_density(const value_type x_lb, const value_
 }
 Plot_handle Population_density::plot(std::vector<bool> projection_dimensions, const char* plot_options, const int plot_flags){
     const int dimension_count = std::count(projection_dimensions.begin(), projection_dimensions.end(), true);
-    const int max_size_passed = 2048;
-    int matlab_array_size = max_size_passed > size() ? size() : max_size_passed;
-    bool delete_remaining = max_size_passed < p_vect.size();
+    int matlab_array_size = g_plot_max_size_passed > size() ? size() : g_plot_max_size_passed;
+    bool delete_remaining = g_plot_max_size_passed < p_vect.size();
     sort_by_weight();
     if (global_matlab_engine == NULL) {
         global_matlab_engine = engOpen("");
@@ -1202,9 +1218,9 @@ Plot_handle Population_density::plot(std::vector<bool> projection_dimensions, co
         auto y_vec = get_location_in_dimension_n(second_coor);
         auto weight_vec = get_weight();
         if (delete_remaining) {
-            x_vec.resize(max_size_passed);
-            y_vec.resize(max_size_passed);
-            weight_vec.resize(max_size_passed);
+            x_vec.resize(g_plot_max_size_passed);
+            y_vec.resize(g_plot_max_size_passed);
+            weight_vec.resize(g_plot_max_size_passed);
         }
         mxArray *x_matlabarray, *y_matlabarray, *weight_matlabarray;
         x_matlabarray = mxCreateDoubleMatrix(1, matlab_array_size, mxREAL);
@@ -1297,10 +1313,10 @@ Plot_handle Population_density::plot(std::vector<bool> projection_dimensions, co
         auto z_vec = get_location_in_dimension_n(third_coor);
         auto weight_vec = get_weight();
         if (delete_remaining) {
-            x_vec.resize(max_size_passed);
-            y_vec.resize(max_size_passed);
-            z_vec.resize(max_size_passed);
-            weight_vec.resize(max_size_passed);
+            x_vec.resize(g_plot_max_size_passed);
+            y_vec.resize(g_plot_max_size_passed);
+            z_vec.resize(g_plot_max_size_passed);
+            weight_vec.resize(g_plot_max_size_passed);
         }
         mxArray *x_matlabarray, *y_matlabarray, *z_matlabarray, *weight_matlabarray;
         x_matlabarray = mxCreateDoubleMatrix(1, matlab_array_size, mxREAL);
