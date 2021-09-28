@@ -21,28 +21,28 @@
 #endif
 #if EIGEN_VERSION_AT_LEAST(3,3,0)//This is required since scalar_add_op is removed from newer versions of eigen
 namespace Eigen {
-	namespace internal {
+    namespace internal {
 
-		template<typename Scalar>
-		struct scalar_add_op {
-			// FIXME default copy constructors seems bugged with std::complex<>
-			EIGEN_DEVICE_FUNC inline scalar_add_op(const scalar_add_op& other) : m_other(other.m_other) { }
-			EIGEN_DEVICE_FUNC inline scalar_add_op(const Scalar& other) : m_other(other) { }
-			EIGEN_DEVICE_FUNC inline Scalar operator() (const Scalar& a) const { return a + m_other; }
-			template <typename Packet>
-			EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const
-			{
-				return internal::padd(a, pset1<Packet>(m_other));
-			}
-			const Scalar m_other;
-		};
-		template<typename Scalar>
-		struct functor_traits<scalar_add_op<Scalar> >
-		{
-			enum { Cost = NumTraits<Scalar>::AddCost, PacketAccess = packet_traits<Scalar>::HasAdd };
-		};
+        template<typename Scalar>
+        struct scalar_add_op {
+            // FIXME default copy constructors seems bugged with std::complex<>
+            EIGEN_DEVICE_FUNC inline scalar_add_op(const scalar_add_op& other) : m_other(other.m_other) { }
+            EIGEN_DEVICE_FUNC inline scalar_add_op(const Scalar& other) : m_other(other) { }
+            EIGEN_DEVICE_FUNC inline Scalar operator() (const Scalar& a) const { return a + m_other; }
+            template <typename Packet>
+            EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a) const
+            {
+                return internal::padd(a, pset1<Packet>(m_other));
+            }
+            const Scalar m_other;
+        };
+        template<typename Scalar>
+        struct functor_traits<scalar_add_op<Scalar> >
+        {
+            enum { Cost = NumTraits<Scalar>::AddCost, PacketAccess = packet_traits<Scalar>::HasAdd };
+        };
 
-	} // namespace internal
+    } // namespace internal
 }
 #endif // EIGEN_VERSION_AT_LEAST(3,3,0)
 #include <boost/numeric/odeint/external/eigen/eigen.hpp>//Provides support for eigen vectors and matrices as state_type of odeint
@@ -73,179 +73,179 @@ class Population_density;
 class Population_density_with_equation;
 struct Particle {
 public:
-	State_variable center_location;
-	Matrix_type covariance_matrix;
-	value_type weight;
-	Particle(index_type state_space_dimension = 1U) {
-		weight = 0.0;
-		center_location = Eigen::VectorXd::Zero(state_space_dimension);
-		covariance_matrix = Eigen::MatrixXd::Identity(state_space_dimension, state_space_dimension);
-	}
-	Particle(const value_type weight, const State_variable& center_location, const Matrix_type& covariance_matrix) : weight(weight),center_location(center_location),covariance_matrix(covariance_matrix) {}
-	value_type density_at(const State_variable& location) const;
-	value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
+    State_variable center_location;
+    Matrix_type covariance_matrix;
+    value_type weight;
+    Particle(index_type state_space_dimension = 1U) {
+        weight = 0.0;
+        center_location = Eigen::VectorXd::Zero(state_space_dimension);
+        covariance_matrix = Eigen::MatrixXd::Identity(state_space_dimension, state_space_dimension);
+    }
+    Particle(const value_type weight, const State_variable& center_location, const Matrix_type& covariance_matrix) : weight(weight),center_location(center_location),covariance_matrix(covariance_matrix) {}
+    value_type density_at(const State_variable& location) const;
+    value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
     friend struct Center_level_set;
     friend struct Advection_diffusion_eqn;
     friend class Population_density;
     friend class Population_density_with_equation;
 private:
-	Center_level_set to_center_level_set() const;
+    Center_level_set to_center_level_set() const;
 };
 //Center_level_set is only used internally.
 struct Center_level_set :// "State variable" used in update_ODE to compute advection diffusion equation
-	boost::additive1<Center_level_set,
-	boost::additive2<Center_level_set, value_type,
-	boost::multiplicative2<Center_level_set, value_type>>>
+    boost::additive1<Center_level_set,
+    boost::additive2<Center_level_set, value_type,
+    boost::multiplicative2<Center_level_set, value_type>>>
 {
-	State_variable center;
-	Matrix_type spanning_vertices;
-	Center_level_set()
-		:center(), spanning_vertices() {
-	}
-	Center_level_set(State_variable v, Matrix_type A)
-		:center(v), spanning_vertices(A) {
-	}
-	Center_level_set& operator+=(const Center_level_set& p) {
-		center += p.center;
-		spanning_vertices += p.spanning_vertices;
-		return *this;
-	}
-	Center_level_set& operator+=(const value_type a) {
-		center = center.array() + a;
-		spanning_vertices = spanning_vertices.array() + a;
-		return *this;
-	}
-	Center_level_set& operator*=(const value_type a) {
-		center *= a;
-		spanning_vertices *= a;
-		return *this;
-	}
-	Center_level_set operator/(const Center_level_set& p2) {
-		center = center.cwiseQuotient(p2.center);
-		spanning_vertices = spanning_vertices.cwiseQuotient(p2.spanning_vertices);
-		return *this;
-	}
-	Particle to_particle(const value_type weight) const {
-		const auto x_current = center;
-		const auto W = spanning_vertices;
-		const Matrix_type Sigma = W * W.transpose();
-		return Particle(weight, x_current, Sigma);
-	}
-	bool need_split(const Center_level_set&, const Advection_diffusion_eqn&, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);
+    State_variable center;
+    Matrix_type spanning_vertices;
+    Center_level_set()
+        :center(), spanning_vertices() {
+    }
+    Center_level_set(State_variable v, Matrix_type A)
+        :center(v), spanning_vertices(A) {
+    }
+    Center_level_set& operator+=(const Center_level_set& p) {
+        center += p.center;
+        spanning_vertices += p.spanning_vertices;
+        return *this;
+    }
+    Center_level_set& operator+=(const value_type a) {
+        center = center.array() + a;
+        spanning_vertices = spanning_vertices.array() + a;
+        return *this;
+    }
+    Center_level_set& operator*=(const value_type a) {
+        center *= a;
+        spanning_vertices *= a;
+        return *this;
+    }
+    Center_level_set operator/(const Center_level_set& p2) {
+        center = center.cwiseQuotient(p2.center);
+        spanning_vertices = spanning_vertices.cwiseQuotient(p2.spanning_vertices);
+        return *this;
+    }
+    Particle to_particle(const value_type weight) const {
+        const auto x_current = center;
+        const auto W = spanning_vertices;
+        const Matrix_type Sigma = W * W.transpose();
+        return Particle(weight, x_current, Sigma);
+    }
+    bool need_split(const Center_level_set&, const Advection_diffusion_eqn&, const value_type rel_error_bound = DEFAULT_SPLIT_REL_ERROR);
 };
 Center_level_set abs(const Center_level_set& p1);
 //Following template defines vector-space algebra on center_level_set, which is required for using odeint solvers.
 namespace boost {
-	namespace numeric {
-		namespace odeint {
-			template<>
-			struct vector_space_norm_inf<Center_level_set> {
-				typedef double result_type;
-				double operator()(const Center_level_set& p) const {
-					const value_type left = p.center.cwiseAbs().maxCoeff();
-					const value_type right = p.spanning_vertices.cwiseAbs().maxCoeff();
-					return left>right?left:right;
-				}
-			};
-		}
-	}
+    namespace numeric {
+        namespace odeint {
+            template<>
+            struct vector_space_norm_inf<Center_level_set> {
+                typedef double result_type;
+                double operator()(const Center_level_set& p) const {
+                    const value_type left = p.center.cwiseAbs().maxCoeff();
+                    const value_type right = p.spanning_vertices.cwiseAbs().maxCoeff();
+                    return left>right?left:right;
+                }
+            };
+        }
+    }
 }
 typedef std::function < value_type(const Particle current_state, const Particle prev_state, const value_type delta_t)> coupling_strength_function;
 typedef std::function<State_variable(const State_variable state_variable, const value_type coupling_strength)> coupling_velocity_function;
 struct Advection_diffusion_eqn {
     //An advection diffusion equation consists of an advection velocity, a matrix-valued diffusion coefficient, a pair of functions to implement coupling, and a pair of functions to check domain.
-	vector_vector_function advection_velocity;
-	coupling_strength_function coupling_strength;
-	coupling_velocity_function coupling_velocity;
-	Matrix_type diffusion_coefficient;
-	const index_type dimension;
-	const bool state_variable_always_valid;//Is true when the state_variable can take any value as long as dimension is correct. Is false when the equation is only valid for a subset of the state space.
-	Advection_diffusion_eqn(const index_type dimension, const Matrix_type& general_diffusion_coefficient, const bool state_variable_always_valid) : dimension(dimension), state_variable_always_valid(state_variable_always_valid) {
-		diffusion_coefficient = general_diffusion_coefficient;
-	}
-	Advection_diffusion_eqn(const index_type dimension, const value_type isotropic_diffusion_coefficient, const bool state_variable_always_valid) : dimension(dimension), state_variable_always_valid(state_variable_always_valid) {
-		diffusion_coefficient = isotropic_diffusion_coefficient * Eigen::MatrixXd::Identity(dimension, dimension);
-	}
-	vector_bool_function state_variable_in_domain;//Returns true if the variable is inside the domain.
-	vector_vector_function state_variable_restrict_to_domain;//A method that maps particles out of domain back inside. (Such particles can be produced when particles are splitted.)
-	//Note: Since a lambda function cannot change value of input
+    vector_vector_function advection_velocity;
+    coupling_strength_function coupling_strength;
+    coupling_velocity_function coupling_velocity;
+    Matrix_type diffusion_coefficient;
+    const index_type dimension;
+    const bool state_variable_always_valid;//Is true when the state_variable can take any value as long as dimension is correct. Is false when the equation is only valid for a subset of the state space.
+    Advection_diffusion_eqn(const index_type dimension, const Matrix_type& general_diffusion_coefficient, const bool state_variable_always_valid) : dimension(dimension), state_variable_always_valid(state_variable_always_valid) {
+        diffusion_coefficient = general_diffusion_coefficient;
+    }
+    Advection_diffusion_eqn(const index_type dimension, const value_type isotropic_diffusion_coefficient, const bool state_variable_always_valid) : dimension(dimension), state_variable_always_valid(state_variable_always_valid) {
+        diffusion_coefficient = isotropic_diffusion_coefficient * Eigen::MatrixXd::Identity(dimension, dimension);
+    }
+    vector_bool_function state_variable_in_domain;//Returns true if the variable is inside the domain.
+    vector_vector_function state_variable_restrict_to_domain;//A method that maps particles out of domain back inside. (Such particles can be produced when particles are splitted.)
+    //Note: Since a lambda function cannot change value of input
 };
 typedef tbb::concurrent_vector<Particle> particle_vector;
 class Population_density {
 public:
-	const index_type dimension;
-	//private: Note p_vect should be considered private, and is not private only due to limit of tbb::concurrent_vector
-	particle_vector p_vect;//container for the particles
+    const index_type dimension;
+    //private: Note p_vect should be considered private, and is not private only due to limit of tbb::concurrent_vector
+    particle_vector p_vect;//container for the particles
 public:
-	//constructor: 
-	Population_density(const index_type state_space_dimension)
-		: dimension(state_space_dimension) {}
-	typedef particle_vector::iterator iterator;
-	typedef particle_vector::const_iterator const_iterator;
-	//container interface: 
-	Particle& operator[](index_type index) {
-		return p_vect[index];
-	}
-	const Particle& operator[](index_type index) const {
-		return p_vect[index];
-	}
-	iterator begin()
-	{
-		return p_vect.begin();
-	}
-	const_iterator begin() const
-	{
-		return p_vect.begin();
-	}
-	iterator end()
-	{
-		return p_vect.end();
-	}
-	const_iterator end() const
-	{
-		return p_vect.end();
-	}
-	size_t size() const
-	{
-		return p_vect.size();
-	}
-	void resize(const size_t n)
-	{
-		p_vect.resize(n);
-	}
-	particle_vector::iterator append(const Particle& particle) {
-		p_vect.push_back(particle);
-		//p_vect.insert(end(), particle);
-		return end();
-	}
-	value_type density_at(const State_variable& location) const;//returns population density at location
-	value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
-	std::vector<value_type> density_at(const std::vector<State_variable>& location) const;//returns population density at all points in the location vector
-	std::vector<value_type> density_projection_at_coordinate(const std::vector<State_variable>& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
-	double average_in_index(const int coord_idx) const;//returns the average value for coordinate i. (e.g. in HH model, average_in_index(0) returns average membrane potential.
+    //constructor: 
+    Population_density(const index_type state_space_dimension)
+        : dimension(state_space_dimension) {}
+    typedef particle_vector::iterator iterator;
+    typedef particle_vector::const_iterator const_iterator;
+    //container interface: 
+    Particle& operator[](index_type index) {
+        return p_vect[index];
+    }
+    const Particle& operator[](index_type index) const {
+        return p_vect[index];
+    }
+    iterator begin()
+    {
+        return p_vect.begin();
+    }
+    const_iterator begin() const
+    {
+        return p_vect.begin();
+    }
+    iterator end()
+    {
+        return p_vect.end();
+    }
+    const_iterator end() const
+    {
+        return p_vect.end();
+    }
+    size_t size() const
+    {
+        return p_vect.size();
+    }
+    void resize(const size_t n)
+    {
+        p_vect.resize(n);
+    }
+    particle_vector::iterator append(const Particle& particle) {
+        p_vect.push_back(particle);
+        //p_vect.insert(end(), particle);
+        return end();
+    }
+    value_type density_at(const State_variable& location) const;//returns population density at location
+    value_type density_projection_at_coordinate(const State_variable& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
+    std::vector<value_type> density_at(const std::vector<State_variable>& location) const;//returns population density at all points in the location vector
+    std::vector<value_type> density_projection_at_coordinate(const std::vector<State_variable>& location, const std::vector<bool>& range_dimensions) const;//range_dimensions is of length dimension. e.g. TFTF means projection to dimension 0 and 2
+    double average_in_index(const int coord_idx) const;//returns the average value for coordinate i. (e.g. in HH model, average_in_index(0) returns average membrane potential.
 #ifdef MATLAB_VISUALIZE
-	Plot_handle plot_density(std::vector<bool> projection_dimensions, const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
+    Plot_handle plot_density(std::vector<bool> projection_dimensions, const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
     //Plot the marginal population density projected into the projection_dimensions. 
     //e.g.: in a 4-dimensional space, projection_dimensions=TFTF projects the marginal density into 1st and 3rd dimension. 
     //The projection can be into a 1-dimensional or 2-dimensional subspace 
     //x_lb, x_ub, y_lb, y_ub is the lower and bounds for the coordinates to project to. y_lb, y_ub is not used when projection is into a 1-dimensional subspace
     //imagesc_options passes additional parameters into the imagesc command of matlab.
-	Plot_handle plot_density(const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
-	//project into first 2 dimensions. 
-	Plot_handle plot_density(const int projection_dimension, const value_type x_lb, const value_type x_ub, const char *imagesc_options) const;//project into 1 dimension
-	//Plot Flags: 1 overwrite, 2 not plot second eigenvec, 4 not plot first eigenvec.
-	Plot_handle plot(std::vector<bool> projection_dimensions, const char* plot_options = "", const int plot_flags = 1);
-	Plot_handle plot(const char* plot_options = "", const int plot_flags = 1);//project into first 2 dimensions. 
-	Plot_handle output_center_and_weight() const;
-	Plot_handle copy_particle_to_matlab(const index_type i) const;//COPY single particle to matlab workspace
+    Plot_handle plot_density(const value_type x_lb, const value_type x_ub, const value_type y_lb, const value_type y_ub, const char* imagesc_options = "") const;
+    //project into first 2 dimensions. 
+    Plot_handle plot_density(const int projection_dimension, const value_type x_lb, const value_type x_ub, const char *imagesc_options) const;//project into 1 dimension
+    //Plot Flags: 1 overwrite, 2 not plot second eigenvec, 4 not plot first eigenvec.
+    Plot_handle plot(std::vector<bool> projection_dimensions, const char* plot_options = "", const int plot_flags = 1);
+    Plot_handle plot(const char* plot_options = "", const int plot_flags = 1);//project into first 2 dimensions. 
+    Plot_handle output_center_and_weight() const;
+    Plot_handle copy_particle_to_matlab(const index_type i) const;//COPY single particle to matlab workspace
     void output_particle(const index_type i, const char output_filename[] = "particle.mat") const;//OUTPUT single particle to a mat file
 #endif // MATLAB_VISUALIZE
-	void output_all_particles(const char output_filename[] = "particles.mat") const;//OUTPUT particles to a mat or h5 file
-	void input_all_particles(const char input_filename[] = "particles.mat");//INPUT particles to a mat or h5 file
-	//mat file structure: need to contain the following 3 variables with matching dimensions
-	// x_array: dimension*particle_count
-	// w_array: 1*particle_count
-	// sigma_array: dimension*dimension*particle_count 3_D array
+    void output_all_particles(const char output_filename[] = "particles.mat") const;//OUTPUT particles to a mat or h5 file
+    void input_all_particles(const char input_filename[] = "particles.mat");//INPUT particles to a mat or h5 file
+    //mat file structure: need to contain the following 3 variables with matching dimensions
+    // x_array: dimension*particle_count
+    // w_array: 1*particle_count
+    // sigma_array: dimension*dimension*particle_count 3_D array
     //hdf5 file structure: //All data is of 64-bit floating-point format
     //need to contain the following 3 datasets with matching particle count and dimension
     // x_array: particle_count*dimension
