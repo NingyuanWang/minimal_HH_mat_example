@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(Boost REQUIRED program_options)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
-find_package(TBB REQUIRED)
+find_package(TBB)
 add_definitions( -DBOOST_ALL_DYN_LINK )
 find_package (Eigen3 3.3 REQUIRED)
 message("tbb lib: ${TBB_LIBRARIES}")
@@ -29,5 +29,5 @@ target_link_libraries (cmake_HH_example
 Eigen3::Eigen
 Boost::program_options
 ${Matlab_MAT_LIBRARY} ${Matlab_MX_LIBRARY} ${Matlab_ENG_LIBRARY}
-${TBB_LIBRARY}
+TBB::tbb
 )
